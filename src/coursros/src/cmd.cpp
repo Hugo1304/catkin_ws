@@ -8,7 +8,8 @@
 const double linear_max_speed = 0.1; // Vitesse maximale linéaire
 const double angular_max_speed = 0.4; // Vitesse maximale angulaire
 const double linear_acceleration = 0.01; // Accélération linéaire
-const double angular_acceleration = 0.05; // Accélération angulaire
+const double angular_acceleration = 0.1; // Accélération angulaire
+const double speed_increment = 0.02; // Incrément de vitesse
 
 double clamp(double value, double min, double max) {
     return std::min(std::max(value, min), max);
@@ -39,8 +40,8 @@ int getch() {
 int main(int argc, char **argv) {
     ros::init(argc, argv, "cmd");
     ros::NodeHandle nh;
-    ros::Publisher cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("cmd_vel", 10);
-    ros::Rate loop_rate(10); // Taux de boucle à 10 Hz pour un contrôle plus réactif
+    ros::Publisher cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("cmd_vel", 100);
+    ros::Rate loop_rate(50); // Taux de boucle à 50 Hz pour un contrôle plus réactif
 
     double linear_speed = 0.0; // Vitesse linéaire actuelle
     double angular_speed = 0.0; // Vitesse angulaire actuelle
@@ -50,19 +51,38 @@ int main(int argc, char **argv) {
 
         int clavier = getch();
 
+        // Accélérer lorsque la touche 'z' est enfoncée
         if (clavier == 'z') {
             linear_speed = clamp(linear_speed + linear_acceleration, -linear_max_speed, linear_max_speed);
-        } else if (clavier == 's') {
-            linear_speed = clamp(linear_speed - linear_acceleration, -linear_max_speed, linear_max_speed);
-        } else if (clavier == 'q') {
+        }
+        // Ralentir la vitesse linéaire lorsque nous tournons
+        else if (clavier == 'q' || clavier == 'd') {
+            linear_speed = clamp(linear_speed - speed_increment, -linear_max_speed, linear_max_speed);
+        }
+        // Tourner à gauche
+        else if (clavier == 'q') {
             angular_speed = clamp(angular_speed + angular_acceleration, -angular_max_speed, angular_max_speed);
-        } else if (clavier == 'd') {
+        }
+        // Tourner à droite
+        else if (clavier == 'd') {
             angular_speed = clamp(angular_speed - angular_acceleration, -angular_max_speed, angular_max_speed);
-        } else if (clavier == 'a') {
+        }
+        // Augmenter la vitesse linéaire avec la touche '8'
+        else if (clavier == '8') {
+            linear_speed = clamp(linear_speed + speed_increment, -linear_max_speed, linear_max_speed);
+        }
+        // Diminuer la vitesse linéaire avec la touche '5'
+        else if (clavier == '5') {
+            linear_speed = clamp(linear_speed - speed_increment, -linear_max_speed, linear_max_speed);
+        }
+        // Arrêter les mouvements
+        else if (clavier == 'a') {
             linear_speed = 0.0;
             angular_speed = 0.0;
-        } else if (clavier == 'h') {
-            ROS_INFO("Arret du programme !");
+        }
+        // Arrêter le programme
+        else if (clavier == 'h') {
+            ROS_INFO("Arrêt du programme !");
             ros::shutdown(); // Arrêter le noeud ROS
             break; // Sortir de la boucle while
         }
